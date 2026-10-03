@@ -1,0 +1,9 @@
+{
+  "myarray|array": "apple,banana,cherry,date,elderberry,",
+  "mylist|flist": "zero,one,two,three,",
+  "mydlist|dlist": "zero,first,second,third,",
+  "mystack|stack": "middle,bottom,top,",
+  "myqueue|queue": "first,second,third,",
+  "mydeque|deque": "front2,front1,back1,back2,",
+  "mytree|tree": "50,30,20,40,70,60,80,"
+}
