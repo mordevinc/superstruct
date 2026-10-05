@@ -108,6 +108,40 @@ void LDEL_NODE(DoublyList* list, DNode* node) {
     list->size--;
 }
 
+// удалить узел после указанного
+void LDEL_AFTER(DoublyList* list, DNode* node) {
+    if (node == nullptr || node->next == nullptr) {
+        std::cout << "no" << std::endl;
+        return;
+    }
+    DNode* tmp = node->next;
+    // перекидываем next у node через удаляемый узел
+    node->next = tmp->next;
+    // если после удаляемого был узел - у него правим prev
+    if (tmp->next != nullptr) tmp->next->prev = node;
+    // если удаляли хвост - передвигаем tail
+    else list->tail = node;
+    delete tmp;
+    list->size--;
+}
+
+// удалить узел перед указанным
+void LDEL_BEFORE(DoublyList* list, DNode* node) {
+    if (node == nullptr || node->prev == nullptr) {
+        std::cout << "no" << std::endl;
+        return;
+    }
+    DNode* tmp = node->prev;
+    // перекидываем prev у node через удаляемый узел
+    node->prev = tmp->prev;
+    // если перед удаляемым был узел - у него правим next
+    if (tmp->prev != nullptr) tmp->prev->next = node;
+    // если удаляли голову - передвигаем head
+    else list->head = node;
+    delete tmp;
+    list->size--;
+}
+
 // удалить узел по значению
 void LDEL_BY_VALUE(DoublyList* list, const std::string& value) {
     DNode* node = LFIND(list, value);

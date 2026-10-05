@@ -69,7 +69,7 @@ void HandleQuery(Registry* reg, const string& query) {
         return;
     }
 
-    // MPUSH имя значение - добавить в конец массива
+    // МАССИВ
     if (cmd == "MPUSH") {
         if (t.size() < 3) { cout << "usage: MPUSH <name> <value>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
@@ -111,7 +111,7 @@ void HandleQuery(Registry* reg, const string& query) {
         cout << "-> " << MLEN(&e->array) << endl;
     }
 
-    // FPUSH имя значение - добавить в хвост односвязного
+    // ОДНОСВЯЗНЫЙ СПИСОК 
     else if (cmd == "FPUSH") {
         if (t.size() < 3) { cout << "usage: FPUSH <name> <value>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
@@ -126,6 +126,27 @@ void HandleQuery(Registry* reg, const string& query) {
         FPUSH_FRONT(&e->flist, t[2]);
         cout << "-> " << t[2] << endl;
     }
+    // FPUSH_AFTER <имя> <ориентир> <значение> - вставить после узла с данным значением
+    else if (cmd == "FPUSH_AFTER") {
+        if (t.size() < 4) { cout << "usage: FPUSH_AFTER <name> <anchor> <value>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_FLIST) { cout << "not found" << endl; return; }
+        FNode* anchor = FFIND(&e->flist, t[2]);
+        if (anchor == nullptr) { cout << "anchor not found" << endl; return; }
+        FPUSH_AFTER(anchor, t[3]);
+        e->flist.size++;
+        cout << "-> " << t[3] << endl;
+    }
+    // FPUSH_BEFORE <имя> <ориентир> <значение> - вставить перед узлом с данным значением
+    else if (cmd == "FPUSH_BEFORE") {
+        if (t.size() < 4) { cout << "usage: FPUSH_BEFORE <name> <anchor> <value>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_FLIST) { cout << "not found" << endl; return; }
+        FNode* anchor = FFIND(&e->flist, t[2]);
+        if (anchor == nullptr) { cout << "anchor not found" << endl; return; }
+        FPUSH_BEFORE(&e->flist, anchor, t[3]);
+        cout << "-> " << t[3] << endl;
+    }
     else if (cmd == "FDEL") {
         if (t.size() < 2) { cout << "usage: FDEL <name>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
@@ -133,14 +154,69 @@ void HandleQuery(Registry* reg, const string& query) {
         FDEL_FRONT(&e->flist);
         cout << "-> OK" << endl;
     }
+    else if (cmd == "FDEL_BACK") {
+        if (t.size() < 2) { cout << "usage: FDEL_BACK <name>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_FLIST) { cout << "not found" << endl; return; }
+        FDEL_BACK(&e->flist);
+        cout << "-> OK" << endl;
+    }
+    // FDEL_AFTER <имя> <ориентир> - удалить узел после данного
+    else if (cmd == "FDEL_AFTER") {
+        if (t.size() < 3) { cout << "usage: FDEL_AFTER <name> <anchor>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_FLIST) { cout << "not found" << endl; return; }
+        FNode* anchor = FFIND(&e->flist, t[2]);
+        if (anchor == nullptr) { cout << "anchor not found" << endl; return; }
+        FDEL_AFTER(&e->flist, anchor);
+        cout << "-> OK" << endl;
+    }
+    // FDEL_BEFORE <имя> <ориентир> - удалить узел перед данным
+    else if (cmd == "FDEL_BEFORE") {
+        if (t.size() < 3) { cout << "usage: FDEL_BEFORE <name> <anchor>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_FLIST) { cout << "not found" << endl; return; }
+        FNode* anchor = FFIND(&e->flist, t[2]);
+        if (anchor == nullptr) { cout << "anchor not found" << endl; return; }
+        FDEL_BEFORE(&e->flist, anchor);
+        cout << "-> OK" << endl;
+    }
+    // FDEL_BY_VALUE <имя> <значение> - удалить узел по значению
+    else if (cmd == "FDEL_BY_VALUE") {
+        if (t.size() < 3) { cout << "usage: FDEL_BY_VALUE <name> <value>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_FLIST) { cout << "not found" << endl; return; }
+        FDEL_BY_VALUE(&e->flist, t[2]);
+        cout << "-> OK" << endl;
+    }
+    // FFIND <имя> <значение> - найти узел по значению
+    else if (cmd == "FFIND") {
+        if (t.size() < 3) { cout << "usage: FFIND <name> <value>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_FLIST) { cout << "not found" << endl; return; }
+        FNode* f = FFIND(&e->flist, t[2]);
+        cout << "-> " << (f ? "TRUE" : "FALSE") << endl;
+    }
     else if (cmd == "FGET") {
         if (t.size() < 2) { cout << "usage: FGET <name>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
         if (!e || e->type != TYPE_FLIST) { cout << "not found" << endl; return; }
         FGET_HEAD(&e->flist);
     }
+    else if (cmd == "FGET_TAIL") {
+        if (t.size() < 2) { cout << "usage: FGET_TAIL <name>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_FLIST) { cout << "not found" << endl; return; }
+        FGET_TAIL(&e->flist);
+    }
+    else if (cmd == "FGET_REVERSE") {
+        if (t.size() < 2) { cout << "usage: FGET_REVERSE <name>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_FLIST) { cout << "not found" << endl; return; }
+        FGET_REVERSE(e->flist.head);
+    }
 
-    // LPUSH имя значение - добавить в хвост двусвязного
+    // ДВУСВЯЗНЫЙ СПИСОК
     else if (cmd == "LPUSH") {
         if (t.size() < 3) { cout << "usage: LPUSH <name> <value>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
@@ -155,6 +231,26 @@ void HandleQuery(Registry* reg, const string& query) {
         LPUSH_FRONT(&e->dlist, t[2]);
         cout << "-> " << t[2] << endl;
     }
+    // LPUSH_AFTER <имя> <ориентир> <значение>
+    else if (cmd == "LPUSH_AFTER") {
+        if (t.size() < 4) { cout << "usage: LPUSH_AFTER <name> <anchor> <value>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_DLIST) { cout << "not found" << endl; return; }
+        DNode* anchor = LFIND(&e->dlist, t[2]);
+        if (anchor == nullptr) { cout << "anchor not found" << endl; return; }
+        LPUSH_AFTER(&e->dlist, anchor, t[3]);
+        cout << "-> " << t[3] << endl;
+    }
+    // LPUSH_BEFORE <имя> <ориентир> <значение>
+    else if (cmd == "LPUSH_BEFORE") {
+        if (t.size() < 4) { cout << "usage: LPUSH_BEFORE <name> <anchor> <value>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_DLIST) { cout << "not found" << endl; return; }
+        DNode* anchor = LFIND(&e->dlist, t[2]);
+        if (anchor == nullptr) { cout << "anchor not found" << endl; return; }
+        LPUSH_BEFORE(&e->dlist, anchor, t[3]);
+        cout << "-> " << t[3] << endl;
+    }
     else if (cmd == "LDEL") {
         if (t.size() < 2) { cout << "usage: LDEL <name>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
@@ -162,14 +258,68 @@ void HandleQuery(Registry* reg, const string& query) {
         LDEL_FRONT(&e->dlist);
         cout << "-> OK" << endl;
     }
+    else if (cmd == "LDEL_BACK") {
+        if (t.size() < 2) { cout << "usage: LDEL_BACK <name>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_DLIST) { cout << "not found" << endl; return; }
+        LDEL_BACK(&e->dlist);
+        cout << "-> OK" << endl;
+    }
+        // LDEL_AFTER <имя> <ориентир> - удалить узел после данного
+    else if (cmd == "LDEL_AFTER") {
+        if (t.size() < 3) { cout << "usage: LDEL_AFTER <name> <anchor>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_DLIST) { cout << "not found" << endl; return; }
+        DNode* anchor = LFIND(&e->dlist, t[2]);
+        if (anchor == nullptr) { cout << "anchor not found" << endl; return; }
+        LDEL_AFTER(&e->dlist, anchor);
+        cout << "-> OK" << endl;
+    }
+    // LDEL_BEFORE <имя> <ориентир> - удалить узел перед данным
+    else if (cmd == "LDEL_BEFORE") {
+        if (t.size() < 3) { cout << "usage: LDEL_BEFORE <name> <anchor>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_DLIST) { cout << "not found" << endl; return; }
+        DNode* anchor = LFIND(&e->dlist, t[2]);
+        if (anchor == nullptr) { cout << "anchor not found" << endl; return; }
+        LDEL_BEFORE(&e->dlist, anchor);
+        cout << "-> OK" << endl;
+    }
+    // LDEL_BY_VALUE <имя> <значение>
+    else if (cmd == "LDEL_BY_VALUE") {
+        if (t.size() < 3) { cout << "usage: LDEL_BY_VALUE <name> <value>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_DLIST) { cout << "not found" << endl; return; }
+        LDEL_BY_VALUE(&e->dlist, t[2]);
+        cout << "-> OK" << endl;
+    }
+    else if (cmd == "LFIND") {
+        if (t.size() < 3) { cout << "usage: LFIND <name> <value>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_DLIST) { cout << "not found" << endl; return; }
+        DNode* f = LFIND(&e->dlist, t[2]);
+        cout << "-> " << (f ? "TRUE" : "FALSE") << endl;
+    }
     else if (cmd == "LGET") {
         if (t.size() < 2) { cout << "usage: LGET <name>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
         if (!e || e->type != TYPE_DLIST) { cout << "not found" << endl; return; }
         LGET_HEAD(&e->dlist);
     }
+    else if (cmd == "LGET_TAIL") {
+        if (t.size() < 2) { cout << "usage: LGET_TAIL <name>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_DLIST) { cout << "not found" << endl; return; }
+        LGET_TAIL(&e->dlist);
+    }
+    else if (cmd == "LGET_REVERSE") {
+        if (t.size() < 2) { cout << "usage: LGET_REVERSE <name>" << endl; return; }
+        StructEntry* e = FindStruct(reg, t[1]);
+        if (!e || e->type != TYPE_DLIST) { cout << "not found" << endl; return; }
+        LGET_REVERSE(&e->dlist);
+    }
 
-    // SPUSH имя значение - положить в стек
+    // СТЕК 
     else if (cmd == "SPUSH") {
         if (t.size() < 3) { cout << "usage: SPUSH <name> <value>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
@@ -184,7 +334,7 @@ void HandleQuery(Registry* reg, const string& query) {
         cout << "-> " << SPOP(&e->stack) << endl;
     }
 
-    // QPUSH имя значение - положить в конец очереди
+    // ОЧЕРЕДЬ 
     else if (cmd == "QPUSH") {
         if (t.size() < 3) { cout << "usage: QPUSH <name> <value>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
@@ -199,7 +349,7 @@ void HandleQuery(Registry* reg, const string& query) {
         cout << "-> " << QPOP(&e->queue) << endl;
     }
 
-    // DPUSH_BACK имя значение - положить в конец двусвязной очереди
+    // ДВУСВЯЗНАЯ ОЧЕРЕДЬ 
     else if (cmd == "DPUSH_BACK") {
         if (t.size() < 3) { cout << "usage: DPUSH_BACK <name> <value>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
@@ -207,7 +357,6 @@ void HandleQuery(Registry* reg, const string& query) {
         DPUSH_BACK(&e->deque, t[2]);
         cout << "-> " << t[2] << endl;
     }
-    // DPUSH_FRONT имя значение - положить в начало
     else if (cmd == "DPUSH_FRONT") {
         if (t.size() < 3) { cout << "usage: DPUSH_FRONT <name> <value>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
@@ -215,7 +364,6 @@ void HandleQuery(Registry* reg, const string& query) {
         DPUSH_FRONT(&e->deque, t[2]);
         cout << "-> " << t[2] << endl;
     }
-    // DPUSH — по умолчанию в конец (как у очереди)
     else if (cmd == "DPUSH") {
         if (t.size() < 3) { cout << "usage: DPUSH <name> <value>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
@@ -223,36 +371,26 @@ void HandleQuery(Registry* reg, const string& query) {
         DPUSH_BACK(&e->deque, t[2]);
         cout << "-> " << t[2] << endl;
     }
-    // DPOP_FRONT имя - достать из начала
     else if (cmd == "DPOP_FRONT") {
         if (t.size() < 2) { cout << "usage: DPOP_FRONT <name>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
         if (!e || e->type != TYPE_DEQUE) { cout << "not found" << endl; return; }
         cout << "-> " << DPOP_FRONT(&e->deque) << endl;
     }
-    // DPOP_BACK имя - достать из конца
     else if (cmd == "DPOP_BACK") {
         if (t.size() < 2) { cout << "usage: DPOP_BACK <name>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
         if (!e || e->type != TYPE_DEQUE) { cout << "not found" << endl; return; }
         cout << "-> " << DPOP_BACK(&e->deque) << endl;
     }
-    // DPOP — по умолчанию из начала (как у очереди)
     else if (cmd == "DPOP") {
         if (t.size() < 2) { cout << "usage: DPOP <name>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
         if (!e || e->type != TYPE_DEQUE) { cout << "not found" << endl; return; }
         cout << "-> " << DPOP_FRONT(&e->deque) << endl;
     }
-    // DGET имя - прочитать начало
-    else if (cmd == "DGET") {
+    else if (cmd == "DGET" || cmd == "DGET_HEAD") {
         if (t.size() < 2) { cout << "usage: DGET <name>" << endl; return; }
-        StructEntry* e = FindStruct(reg, t[1]);
-        if (!e || e->type != TYPE_DEQUE) { cout << "not found" << endl; return; }
-        DGET_HEAD(&e->deque);
-    }
-    else if (cmd == "DGET_HEAD") {
-        if (t.size() < 2) { cout << "usage: DGET_HEAD <name>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
         if (!e || e->type != TYPE_DEQUE) { cout << "not found" << endl; return; }
         DGET_HEAD(&e->deque);
@@ -264,7 +402,7 @@ void HandleQuery(Registry* reg, const string& query) {
         DGET_TAIL(&e->deque);
     }
 
-    // TINSERT имя ключ - вставить ключ в дерево (ключ - число)
+    // ДЕРЕВО
     else if (cmd == "TINSERT") {
         if (t.size() < 3) { cout << "usage: TINSERT <name> <key>" << endl; return; }
         StructEntry* e = FindStruct(reg, t[1]);
@@ -292,7 +430,7 @@ void HandleQuery(Registry* reg, const string& query) {
     }
 }
 
-// точка входа: разбирает флаги, грузит реестр, обрабатывает запрос, сохраняет
+
 int main(int argc, char* argv[]) {
     setlocale(LC_ALL, "rus");
 
@@ -309,7 +447,6 @@ int main(int argc, char* argv[]) {
     Registry reg;
     InitRegistry(&reg);
 
-    // если файл есть - грузим, если нет - создаём дефолтные структуры
     if (FileExists(filename)) {
         LoadRegistry(&reg, filename);
     } else {

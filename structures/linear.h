@@ -133,6 +133,12 @@ void LDEL_BACK(DoublyList* list);
 // удалить конкретный узел
 void LDEL_NODE(DoublyList* list, DNode* node);
 
+// удалить узел после указанного
+void LDEL_AFTER(DoublyList* list, DNode* node);
+
+// удалить узел перед указанным
+void LDEL_BEFORE(DoublyList* list, DNode* node);
+
 // удалить по значению
 void LDEL_BY_VALUE(DoublyList* list, const std::string& value);
 
