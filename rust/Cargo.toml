@@ -1,0 +1,8 @@
+[package]
+name = "dbms_rust"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "dbms_rust"
+path = "src/main.rs"
